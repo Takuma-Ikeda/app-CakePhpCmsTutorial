@@ -15,7 +15,6 @@
 namespace App\Controller;
 
 use Cake\Controller\Controller;
-use Cake\Event\Event;
 
 /**
  * Application Controller
@@ -47,9 +46,41 @@ class AppController extends Controller
         $this->loadComponent('Flash');
 
         /*
+        ログイン機能を実装するため AuthComponent をアプリケーションに追加
+         */
+        $this->loadComponent('Auth', [
+            'authenticate' => [
+                'Form' => [
+                    'fields' => [
+                        'username' => 'email',
+                        'password' => 'password',
+                    ],
+                ],
+            ],
+            'loginAction' => [
+                'controller' => 'Users',
+                'action' => 'login',
+            ],
+            // このコントローラーの isAuthorized を使用
+            'authorize' => ['Controller'],
+            // 未認証の場合、直前のページに戻す
+            'unauthorizedRedirect' => $this->referer(),
+        ]);
+
+        // display アクションを許可して PagesController が引き続き動作する
+        // また、読み取り専用のアクションを有効にする
+        $this->Auth->allow(['display', 'view', 'index']);
+
+        /*
          * Enable the following component for recommended CakePHP security settings.
          * see https://book.cakephp.org/3.0/en/controllers/components/security.html
          */
         //$this->loadComponent('Security');
+    }
+
+    public function isAuthorized($user)
+    {
+        // デフォルトはアクセスを拒否
+        return false;
     }
 }

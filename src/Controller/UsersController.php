@@ -12,6 +12,14 @@ use App\Controller\AppController;
  */
 class UsersController extends AppController
 {
+
+    public function initialize()
+    {
+        parent::initialize();
+        // 認証を必要としないアクションを定義
+        $this->Auth->allow(['logout', 'add']);
+    }
+
     /**
      * Index method
      *
@@ -34,7 +42,7 @@ class UsersController extends AppController
     public function view($id = null)
     {
         $user = $this->Users->get($id, [
-            'contain' => ['Articles']
+            'contain' => ['Articles'],
         ]);
 
         $this->set('user', $user);
@@ -70,7 +78,7 @@ class UsersController extends AppController
     public function edit($id = null)
     {
         $user = $this->Users->get($id, [
-            'contain' => []
+            'contain' => [],
         ]);
         if ($this->request->is(['patch', 'post', 'put'])) {
             $user = $this->Users->patchEntity($user, $this->request->getData());
@@ -102,5 +110,29 @@ class UsersController extends AppController
         }
 
         return $this->redirect(['action' => 'index']);
+    }
+
+    /**
+     * ログイン処理
+     */
+    public function login()
+    {
+        if ($this->request->is('post')) {
+            $user = $this->Auth->identify();
+            if ($user) {
+                $this->Auth->setUser($user);
+                return $this->redirect($this->Auth->redirectUrl());
+            }
+            $this->Flash->error('ユーザー名またはパスワードが不正です。');
+        }
+    }
+
+    /**
+     * ログイン処理
+     */
+    public function logout()
+    {
+        $this->Flash->success('ログアウトしました。');
+        return $this->redirect($this->Auth->logout());
     }
 }

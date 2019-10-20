@@ -1,6 +1,7 @@
 <?php
 namespace App\Model\Entity;
 
+use Cake\Auth\DefaultPasswordHasher;
 use Cake\ORM\Entity;
 
 /**
@@ -30,7 +31,7 @@ class User extends Entity
         'password' => true,
         'created' => true,
         'modified' => true,
-        'articles' => true
+        'articles' => true,
     ];
 
     /**
@@ -39,6 +40,19 @@ class User extends Entity
      * @var array
      */
     protected $_hidden = [
-        'password'
+        'password',
     ];
+
+    /**
+     * パスワードが設定されるたびに bycrypt でハッシュ化するミューテーター/セッターメソッド
+     *
+     * @param $value
+     */
+    protected function _setPassword($value)
+    {
+        if (strlen($value)) {
+            $hasher = new DefaultPasswordHasher();
+            return $hasher->hash($value);
+        }
+    }
 }

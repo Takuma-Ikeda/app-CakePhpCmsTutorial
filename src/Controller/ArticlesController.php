@@ -15,6 +15,9 @@ class ArticlesController extends AppController
 
         // AppController 側で include してもよい
         $this->loadComponent('Flash');
+
+        // 未ログインのユーザーに許可するアクション
+        $this->Auth->allow(['tags']);
     }
 
     /**
@@ -56,8 +59,8 @@ class ArticlesController extends AppController
             // 3. この Entity は ArticlesTable オブジェクトを使用して永続化される
             $article = $this->Articles->patchEntity($article, $this->request->getData());
 
-            // 一旦仮で代入
-            $article->user_id = 1;
+            // セッションから user_id をセット
+            $article->user_id = $this->Auth->user('id');
 
             // DB 登録実行 -> 成功
             if ($this->Articles->save($article)) {
@@ -84,11 +87,16 @@ class ArticlesController extends AppController
      */
     public function edit($slug)
     {
-        $article = $this->Articles->findBySlug($slug)->firstOrFail();
+        // 関連付けされたタグも読み込む
+        $article = $this->Articles->findBySlug($slug)->contain('Tags')->firstOrFail();
 
         // POST / PUT の場合
         if ($this->request->is(['post', 'put'])) {
-            $this->Articles->patchEntity($article, $this->request->getData());
+            $this->Articles->patchEntity($article, $this->request->getData(), [
+                // どのプロパティーを一括代入できるか変更 -> user_id の更新を無効化
+                // id はデフォルトで暗黙的な false になっている
+                'accessibleFields' => ['user_id' => false],
+            ]);
             if ($this->Articles->save($article)) {
                 $this->Flash->success(__('Your article has been updated.'));
                 return $this->redirect(['action' => 'index']);
@@ -150,5 +158,29 @@ class ArticlesController extends AppController
             'articles' => $articles,
             'tags' => $tags,
         ]);
+    }
+
+    /**
+     * AppController の isAuthorized をオーバーライド
+     * @param string $user
+     * @return bool
+     */
+    public function isAuthorized($user)
+    {
+        $action = $this->request->getParam('action');
+        // add / tags アクションはログインしているユーザーにだけ許可される
+        if (in_array($action, ['add', 'tags'])) {
+            return true;
+        }
+
+        // 他のすべてのアクションにはスラッグが必要
+        $slug = $this->request->getParam('pass.0');
+        if (!$slug) {
+            return false;
+        }
+
+        // 記事が現在のユーザーに属していることを確認
+        $article = $this->Articles->findBySlug($slug)->first();
+        return $article->user_id === $user['id'];
     }
 }
