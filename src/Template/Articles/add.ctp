@@ -12,6 +12,12 @@ echo $this->Form->control('user_id', ['type' => 'hidden', 'value' => 1]);
 echo $this->Form->control('title');
 echo $this->Form->control('body', ['rows' => '3']);
 
+// 子:多 テーブルの $tags をセレクトボックスの選択肢として表示する
+// echo $this->Form->control('tags._ids', ['options' => $tags]);
+
+// 仮想/計算フィールド
+echo $this->Form->control('tag_string', ['type' => 'text']);
+
 echo $this->Form->button(__('Save Article'));
 
 echo $this->Form->end();

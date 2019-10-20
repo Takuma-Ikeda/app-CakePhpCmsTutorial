@@ -68,10 +68,13 @@ class ArticlesController extends AppController
                 // index アクションだけど URL は /articles に変換される
                 return $this->redirect(['action' => 'index']);
             }
-
             // エラーメッセージで View 描画
             $this->Flash->error(__('Unable to add your article.'));
         }
+        // tags テーブルからリストを取得
+        $tags = $this->Articles->Tags->find('list');
+
+        $this->set('tags', $tags);
         $this->set('article', $article);
     }
 
@@ -92,7 +95,8 @@ class ArticlesController extends AppController
             }
             $this->Flash->error(__('Unable to update your article.'));
         }
-
+        $tags = $this->Articles->Tags->find('list');
+        $this->set('tags', $tags);
         $this->set('article', $article);
     }
 
@@ -111,5 +115,40 @@ class ArticlesController extends AppController
             $this->Flash->success(__('The {0} article has been deleted.', $article->title));
             return $this->redirect(['action' => 'index']);
         }
+    }
+
+    /**
+     * @action tags
+     * @param string $slug
+     */
+    /*
+    public function tags()
+    {
+    // 'pass' キーを指定すると、リクエストに渡されたパラメータを取得する
+    $tags = $this->request->getParam('pass');
+
+    // ArticlesTable を使用してタグ付きの記事を検索
+    $articles = $this->Articles->find('tagged', [
+    'tags' => $tags,
+    ]);
+
+    $this->set([
+    'articles' => $articles,
+    'tags' => $tags,
+    ]);
+    }
+     */
+
+    // 上記のようにわざわざリクエスト取得しなくても、可変引数で最初から取れる
+    public function tags(...$tags)
+    {
+        $articles = $this->Articles->find('tagged', [
+            'tags' => $tags,
+        ]);
+
+        $this->set([
+            'articles' => $articles,
+            'tags' => $tags,
+        ]);
     }
 }
